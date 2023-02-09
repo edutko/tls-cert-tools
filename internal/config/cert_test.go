@@ -1,7 +1,9 @@
 package config
 
 import (
+	"bytes"
 	"crypto/x509"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +19,7 @@ func TestCert_ToTemplate_defaults(t *testing.T) {
 	assert.NotEmpty(t, crt.NotAfter)
 	assert.Equal(t, x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment, crt.KeyUsage)
 	assert.Equal(t, []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}, crt.ExtKeyUsage)
-	assert.NotNil(t, crt.SerialNumber)
+	assertValidSerial(t, crt.SerialNumber)
 	assert.Empty(t, crt.DNSNames)
 	assert.Empty(t, crt.IPAddresses)
 	assert.Empty(t, crt.EmailAddresses)
@@ -38,7 +40,7 @@ func TestCert_ToTemplate_rootCA(t *testing.T) {
 	assert.NotEmpty(t, crt.NotAfter)
 	assert.Equal(t, x509.KeyUsageCertSign|x509.KeyUsageCRLSign, crt.KeyUsage)
 	assert.Empty(t, crt.ExtKeyUsage)
-	assert.NotNil(t, crt.SerialNumber)
+	assertValidSerial(t, crt.SerialNumber)
 	assert.Empty(t, crt.DNSNames)
 	assert.Empty(t, crt.IPAddresses)
 	assert.Empty(t, crt.EmailAddresses)
@@ -59,7 +61,7 @@ func TestCert_ToTemplate_intermediaCA(t *testing.T) {
 	assert.NotEmpty(t, crt.NotAfter)
 	assert.Equal(t, x509.KeyUsageCertSign|x509.KeyUsageCRLSign, crt.KeyUsage)
 	assert.Empty(t, crt.ExtKeyUsage)
-	assert.NotNil(t, crt.SerialNumber)
+	assertValidSerial(t, crt.SerialNumber)
 	assert.Empty(t, crt.DNSNames)
 	assert.Empty(t, crt.IPAddresses)
 	assert.Empty(t, crt.EmailAddresses)
@@ -80,7 +82,7 @@ func TestCert_ToTemplate_server(t *testing.T) {
 	assert.NotEmpty(t, crt.NotAfter)
 	assert.Equal(t, x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment, crt.KeyUsage)
 	assert.Equal(t, []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}, crt.ExtKeyUsage)
-	assert.NotNil(t, crt.SerialNumber)
+	assertValidSerial(t, crt.SerialNumber)
 	assert.Empty(t, crt.DNSNames)
 	assert.Empty(t, crt.IPAddresses)
 	assert.Empty(t, crt.EmailAddresses)
@@ -101,7 +103,7 @@ func TestCert_ToTemplate_client(t *testing.T) {
 	assert.NotEmpty(t, crt.NotAfter)
 	assert.Equal(t, x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment, crt.KeyUsage)
 	assert.Equal(t, []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}, crt.ExtKeyUsage)
-	assert.NotNil(t, crt.SerialNumber)
+	assertValidSerial(t, crt.SerialNumber)
 	assert.Empty(t, crt.DNSNames)
 	assert.Empty(t, crt.IPAddresses)
 	assert.Empty(t, crt.EmailAddresses)
@@ -110,4 +112,12 @@ func TestCert_ToTemplate_client(t *testing.T) {
 	assert.Empty(t, crt.BasicConstraintsValid)
 	assert.Empty(t, crt.MaxPathLen)
 	assert.Empty(t, crt.MaxPathLenZero)
+}
+
+func assertValidSerial(t *testing.T, serial *big.Int) {
+	assert.NotNil(t, serial)
+	sb := serial.Bytes()
+	assert.Greater(t, len(sb), 16)
+	assert.Less(t, len(sb), 20)
+	assert.NotEqual(t, sb, bytes.Repeat([]byte{0x00}, len(sb)))
 }
